@@ -38,20 +38,21 @@
 
 **方法一：插件面板**（简单）
 
-1. 打开 DSH → 设置 → 插件 → 添加插件
-2. 填这个目录的路径：`S:\插件工作区\dsh-netease-float`
+1. 把仓库下载/克隆到本机任意位置
+2. 打开 DSH → 设置 → 插件 → 添加插件，填**你存放它的那个目录**
 3. 装好后**完全退出 DSH**（不是关窗口，是退进程）再重新打开
 
 改代码之后也要这样重启才生效，热更新不管用。
 
 **方法二：手动改配置**
 
-打开 `C:\Users\<你>\.dsh\profiles\desktop\package.json`：
+先把仓库放到一个固定的目录（下称 `<插件目录>`），然后打开 `~/.dsh/profiles/desktop/package.json`
+（Windows 上是 `%USERPROFILE%\.dsh\profiles\desktop\package.json`）：
 
 ```json
 {
   "dependencies": {
-    "dsh-netease-float": "file:C:/Users/<你>/.dsh/plugins/dsh-netease-float"
+    "dsh-netease-float": "file:<插件目录>"
   },
   "dsh": { "profile": { "bundles": [
     "...",
@@ -59,6 +60,8 @@
   ] } }
 }
 ```
+
+注意 `file:` 后面要写**绝对路径**，Windows 下用正斜杠，例如 `file:D:/plugins/dsh-netease-float`。
 
 然后在这个 profile 目录下跑 `pnpm install`，再重启 DSH。
 
