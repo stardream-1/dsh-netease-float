@@ -1,0 +1,39 @@
+{
+  "name": "dsh-netease-float",
+  "version": "1.1.1",
+  "description": "Floating NetEase Cloud Music player with its own wallpaper backdrop, for DeepSeek Harness. 网易云音乐悬浮小窗播放器，小窗内部独立壁纸背景，不改动主界面外观。",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "netease",
+    "music",
+    "wallpaper",
+    "floating-player"
+  ],
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}

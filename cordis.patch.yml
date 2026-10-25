@@ -1,0 +1,7 @@
+# dsh-netease-float — DSH bundle patch
+#
+# 把 Host 半侧挂进 profile 的配置树。浏览器半侧由 package.json 的 `dsh.client`
+# 声明，宿主按它自动组装 bundle，这里不需要再写。
+- insert:
+    - id: netease-float
+      name: 'dsh-netease-float'
