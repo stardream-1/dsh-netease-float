@@ -1,119 +1,151 @@
 # dsh-netease-float
 
-自用的网易云音乐悬浮小窗：**歌单、搜索、歌词、动态壁纸**，塞进 DeepSeek Harness 一个可拖动的小窗里。
+给你的 DeepSeek Harness 装一个**网易云音乐小窗**——浮在界面角落，能拖动、能放大缩小，背景可以是你自己的动态壁纸。
 
-> **边界**：壁纸只铺在悬浮小窗**内部**。不注入 `index.html`、不改主题变量、不写 `html/body` 样式，
-> DSH 主界面、对话区、侧栏保持原样。卸载后小窗、路由、样式一并消失。
+歌想听就听，不想听就收起，不占地方。
 
-## 功能
+> 壁纸只铺在这个小窗里面，**不会动你的 DSH 主界面**。对话区、侧栏还是原来的样子。
 
-**播放**
+---
 
-- 搜索歌曲、播放/暂停、上一首/下一首、进度条拖动 + 缓冲条
-- 循环三态：列表循环 / 单曲循环 / 不循环
-- 直接读取**账号歌单**（含「我喜欢的音乐」），点一下整单入队并开播
-- 窗口空白处显示歌词：当前行高亮 + 前后各一行上下文
+## 能干什么
+
+**放歌**
+
+- 搜歌名，点一下就播
+- 上一首 / 下一首 / 拖进度条
+- 循环切三档：列表循环 → 单曲循环 → 不循环
+- 打开**你自己的网易云歌单**（"我喜欢的音乐"也在里面），点一下整张单子排队开播
+- 歌词显示在小窗中间的空白处，当前那句高亮，前后各带一句
 
 **小窗**
 
-- Pointer Events 拖动，位置和尺寸写 `localStorage`，重启恢复
-- 右下角手柄拖拽缩放（280×150 ~ 900×720，自动受视口限制）
-- 三层结构：壁纸层（`object-fit: cover`、`pointer-events: none`）→ 可调遮罩（暗化 + 模糊）→ UI 层
+- 按住标题栏拖到任意位置
+- 右下角那个小三角按住拖动 → 放大缩小（280×150 ~ 900×720）
+- 位置和大小会记住，下次打开还是原样
 
 **壁纸**
 
-- 视频 / 图片：`.mp4` `.webm` `.jpg` `.png` `.gif`，动态与静态帧一键切换（静态即暂停解码，保留当前帧）
-- **场景壁纸**：Wallpaper Engine 的 `.pkg` 由内嵌的 [WebWallGL](https://github.com/oneincase/webwallgl)
-  实时渲染真实场景（图层 / 粒子 / 效果），不是抽一帧预览图
-- 壁纸从 Steam 创意工坊目录扫描（`431960`）
+- 视频（`.mp4` `.webm`）、图片（`.jpg` `.png` `.gif`）都行
+- **Wallpaper Engine 的场景壁纸**也能用，是真渲染不是截张图
+- 想省电就切"静态帧"，画面停住不动
+
+---
 
 ## 装
 
-桌面版的 profile 由 Electron 独占，命令行装不了：
+> 这个插件是给 **DSH 桌面版**用的。桌面版的 profile 被 Electron 锁着，命令行装不了。
 
-```bash
-dsh plugin --profile desktop add <本目录>
-# error: profile "desktop" is managed exclusively by the Electron application
+**方法一：插件面板**（简单）
+
+1. 打开 DSH → 设置 → 插件 → 添加插件
+2. 填这个目录的路径：`S:\插件工作区\dsh-netease-float`
+3. 装好后**完全退出 DSH**（不是关窗口，是退进程）再重新打开
+
+改代码之后也要这样重启才生效，热更新不管用。
+
+**方法二：手动改配置**
+
+打开 `C:\Users\<你>\.dsh\profiles\desktop\package.json`：
+
+```json
+{
+  "dependencies": {
+    "dsh-netease-float": "file:C:/Users/<你>/.dsh/plugins/dsh-netease-float"
+  },
+  "dsh": { "profile": { "bundles": [
+    "...",
+    "dsh-netease-float"
+  ] } }
+}
 ```
 
-两条可用路径：
+然后在这个 profile 目录下跑 `pnpm install`，再重启 DSH。
 
-1. **插件面板**：设置 → 插件 → 添加插件，填本地目录路径，装完**完全退出** DSH 再打开
-2. **手工**：往 `profiles/desktop/package.json` 的 `dependencies` 加一条
-   `"dsh-netease-float": "file:<绝对路径>"`，`dsh.profile.bundles` 追加包名，再 `pnpm install`
+---
 
-装完在 `~/.dsh/netease-float.json` 里配 Cookie（VIP 曲需要），或在小窗设置面板里点「粘贴 Cookie」。
-免费曲不配也能放。
+## 用
 
-## 技术要点
+打开后小窗出现在屏幕上，按钮不多：
 
-写给想看实现的人。这个插件绕过了 DSH 桌面端三个坑，都在 `lib/index.js` / `lib/client.js` 里。
+| 按钮 | 干什么 |
+|---|---|
+| `⌕` | 搜索歌曲 |
+| `☰` | 播放列表 / 账号歌单 |
+| `⚙` | 设置（壁纸、透明度、Cookie） |
+| `▶` `⏸` | 播放 / 暂停 |
+| `▢` | 收起成一条，只剩歌名 |
+| 右下角小三角 | 按住拖动缩放 |
 
-### 1. 桌面端的媒体请求带不上 cookie
+**要登录吗？** 免费歌不用。想听 VIP 曲目才需要配 Cookie：设置面板里点「粘贴 Cookie」，把 `MUSIC_U=...; __csrf=...` 那串粘进去。只想听免费歌的话跳过就行。
 
-桌面端页面 origin 是 `dsh-app://app`（自定义协议），`<audio>` / `<script>` / `<img>` 由浏览器原生发起
-`http://127.0.0.1:<port>/...` 时**不会带 DSH 的认证 cookie**，被 `connection.requestRejection` 一律挡成 401。
+---
 
-表现为音频加载失败、壁纸空白、歌单接口返回空 body。解法是给媒体类路由发一张进程内随机通行证：
+## 遇到问题
 
-```js
-const MEDIA_TOKEN = randomBytes(16).toString('hex')
-// /api/http-base 把它交给客户端，媒体地址拼上 &mt=<token>
-```
+**点了没声音 / 提示"加载不了"**
 
-`/api/http-base` 同时返回真实 HTTP origin，客户端据此拼绝对地址。
+多半是 Cookie 过期了。设置里重新粘一次 Cookie。如果只想听免费歌，检查一下歌本身带不带 VIP 标记。
 
-### 2. `dsh-app://` 协议转发会吞掉 `Content-Length`
+**壁纸是黑的**
 
-`app.asar/lib/main.js` 里那段 `forwardWebRequest` 的
+- 选了场景壁纸但电脑不支持 WebGL2 → 会退回显示预览图，功能还能用
+- 视频壁纸文件太大，第一次加载会慢一点
+
+**进度条拖不动**
+
+旧版本的毛病，已经修了。如果还遇到，重启一下 DSH 试试。
+
+**歌单列表是空的**
+
+说明 Cookie 没配或者失效了。歌单功能必须登录。
+
+---
+
+## 它是怎么做出来的
+
+好奇实现的话看这段，不关心可以直接跳到下面的许可。
+
+这个插件踩着 DSH 桌面端三个坑过来，每个都不太容易发现：
+
+**一、小窗里的媒体请求带不上登录信息**
+
+桌面版的页面跑在一个叫 `dsh-app://` 的自定义协议下。播放器发出去的音频请求、壁纸请求，浏览器是直接打到 `127.0.0.1` 的，**没带 DSH 的 Cookie**，于是全被安全机制挡成 401。
+
+表现为：音频放不出来、壁纸一片黑、歌单接口返回空白。
+
+解法是给媒体类请求发一张"通行证"——启动时随机生成一串口令，媒体地址后面带上它，服务端认这个口令而不是认 Cookie。
+
+**二、DSH 的协议转发会偷偷扔掉一个响应头**
+
+音频要能拖动进度条，浏览器得知道文件总共多长（`Content-Length`）。但桌面版在转发响应时，把这个头**故意删掉了**：
 
 ```js
 const WITHHELD_RESPONSE_HEADERS = ["set-cookie", "content-encoding", "content-length", ...]
 ```
 
-保留 Range 请求头和 206 状态，**唯独扣掉 `content-length`**。浏览器拿不到音频总长度，`seekable`
-范围塌缩成只能拖已缓冲段——表现就是进度条拖了没反应、拖过去一会儿又跳回 0:00。
+不知道总长度，浏览器就以为这歌只能从头听到尾，进度条自然拖不动。
 
-所以音频走 CDN 直链，不自己转发字节。
+最后的解法很朴素：音频不自己转发了，直接拿网易云 CDN 的地址给播放器。
 
-### 3. 自动播放被限制时，异步回来的 `play()` 会被拦
+**三、异步拿到的歌，浏览器不让播**
 
-点歌单要先 `fetch` 歌曲列表，回调里再 `play()`，那时用户手势已经过期。做法是**打开面板就预取**
-歌单歌曲（前 12 个），点的时候全程同步。被策略拦下时还有一层兜底：先静音起播再取消静音。
+点歌单的时候要先请求歌曲列表，等数据回来再播放——可这时候"用户刚刚点过"这件事已经过期了，浏览器会拦。所以做成打开歌单面板时**提前把歌单内容取好**，点的时候数据就在手里，当场播。
 
-## 场景壁纸怎么渲染的
+---
 
-`scene.pkg` 是 PKGV 容器 + `.tex` 纹理，真正的动画在场景对象里，抽内嵌视频会漏掉大多数壁纸。
-现在的路径是**实时渲染**：
+## 壁纸是怎么渲染的
 
-1. Host 经 `/api/webwallgl.js` 暴露随包分发的 WebWallGL（1.1 MB，MIT），首次用到才加载
-2. 客户端把 `scene.pkg` 原始字节 + `project.json` 交给 `WebWallGL.mount()`，用 `bytesSource()`
-   让它自己解析，渲染到小窗背景的 canvas
-3. 挂载参数固定 `scripts: false`（**不执行壁纸自带的 SceneScript** —— 壁纸与 DSH 页面同源）、
-   `volume: 0`、`fps: 30`、`renderDpr: 1`，控制小窗里的 GPU 占用
-4. 加载期间用 `preview.jpg/gif` 占位；渲染器不可用（无 WebGL2 等）时回退预览图并提示
+Wallpaper Engine 的场景壁纸是一个 `.pkg` 文件，里面装着纹理和场景描述，动画效果由场景里的图层、粒子、模型跑出来。
 
-`lib/vendor/pkg-read.js` + `scene-manifest.js` 只用于探测/抽取内嵌 MP4 作为兜底，不在主路径上。
+这个插件用 [WebWallGL](https://github.com/oneincase/webwallgl) 把它们**实时渲染**在 canvas 上，而不是抽一张预览图充数。
 
-## 路由
+出于安全考虑，壁纸自带的脚本是**不执行**的（`scripts: false`）——壁纸和 DSH 页面同源，跑陌生脚本风险太大。
 
-前缀 `/netease-float`。
-
-| 路由 | 说明 | 认证 |
-|---|---|---|
-| `/api/search` `/api/lyric` `/api/config` `/api/wallpapers` `/api/http-base` | 搜索、歌词、配置、壁纸清单 | cookie 栅栏 |
-| `/api/nm/playlists` `/api/nm/playlist?id=` | 账号歌单列表 / 歌单歌曲 | 媒体令牌 |
-| `/api/song-url?id=` | 网易云 CDN 直链（升 https） | cookie 栅栏 |
-| `/api/audio?id=` | 音频代理（直链失败时的兜底，支持 Range） | 媒体令牌 |
-| `/api/wallpaper-media` `/api/scene-video` `/api/wallpaper-preview` `/api/webwallgl.js` | 壁纸媒体与渲染器 | 媒体令牌 |
-| `/api/netease-cookie` | 从本机客户端导入登录态 | cookie 栅栏 |
-
-壁纸路径校验过 `path.resolve` 前缀，不接受 `../` 穿越。
+---
 
 ## 许可
 
-MIT（见 `LICENSE`）。
+MIT。
 
-壁纸渲染依赖 [WebWallGL](https://github.com/oneincase/webwallgl)（MIT，随包分发）；
-`pkg-read.js` 与 `scene-manifest.js` 改自 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)（MIT）。
-第三方声明见 `lib/vendor/NOTICE.md`。
+壁纸渲染部分用了 [WebWallGL](https://github.com/oneincase/webwallgl)（也是 MIT），`.pkg` 解析的代码改编自 [elysia395/dsh-wallpaper-engine](https://github.com/elysia395/dsh-wallpaper-engine)。第三方声明都在 `lib/vendor/NOTICE.md` 里。
